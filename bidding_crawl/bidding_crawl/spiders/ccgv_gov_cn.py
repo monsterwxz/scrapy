@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from bidding_crawl.items import CCGV_ITEM
+from ..items import CCGV_ITEM
 import re
 import logging
 
