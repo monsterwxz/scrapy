@@ -93,16 +93,16 @@ import logging
 # 日志打印开关
 LOG_ENABLED = True
 LOG_LEVEL = logging.INFO
-LOG_FILE = 'spider.log'
-LOG_STDOUT = True
+# LOG_FILE = 'spider.log'
+# LOG_STDOUT = True
 
 # mongodb数据库配置
 MONGO_URI = 'mongodb://192.168.110.51:27017'
 MONGO_DB = "xuqiang"
 MONGO_CONNECTION = "xiaoqu_info_all"
-MYCookie = '___rl__test__cookies=1540783879590; aQQ_ajkguid=52616037-C06C-5C9D-9F61-BBEDAAEE5A93; twe=2; sessid=65A95901-612D-ADBB-7497-F059009481C3; 58tj_uuid=cf3b4d88-71ab-439e-8305-6d8bf1e7bd54; als=0; _ga=GA1.2.495209661.1540519851; isp=true; Hm_lvt_c5899c8768ebee272710c9c5f365a6d8=1540520326; ajk_member_captcha=dc80c25bb452dd6c69e3de74c6c88a9c; propertys=obkghx-ph6qgn_; Hm_lpvt_c5899c8768ebee272710c9c5f365a6d8=1540532861; wmda_uuid=982871dbb3789e1f3ac80699c275bedf; wmda_new_uuid=1; wmda_visited_projects=%3B6145577459763; OUTFOX_SEARCH_USER_ID_NCOO=474938652.6946653; browse_comm_ids20=366473; Ref=https%3A%2F%2Fm.anjuke.com%2Fans%2Fmap%2F%3Fadr%3D%25E5%25AE%2589%25E9%25A1%25BA%25E5%25B8%2582%25E4%25B8%25AD%25E5%258D%258E%25E5%258D%2597%25E8%25B7%25AF%25E5%2592%258C%25E5%25A1%2594%25E5%25B1%25B1%25E4%25B8%259C%25E8%25B7%25AF%25E7%259A%2584%25E4%25BA%25A4%25E5%258F%2589%25E5%258F%25A3%26lng%3D0%26lat%3D0%26tp%3Dcomm%26id%3D773546; ctid=15; lps="/cd/xiaoqu/|https://m.anjuke.com/captcha-verify/?callback=shield&from=antispam&serialID=c01c5738f45fe56efcc8a1a067cac0f6_64cef457f47d483299787853e1809f6d&history=aHR0cHM6Ly9tLmFuanVrZS5jb20vY2QveGlhb3F1Lw%3D%3D"; wmda_session_id_6145577459763=1540794744030-65825f5e-d663-3c16; init_refer=https%253A%252F%252Fm.anjuke.com%252Fcaptcha-verify%252F%253Fcallback%253Dshield%2526from%253Dantispam%2526serialID%253Dc01c5738f45fe56efcc8a1a067cac0f6_64cef457f47d483299787853e1809f6d%2526history%253DaHR0cHM6Ly9tLmFuanVrZS5jb20vY2QveGlhb3F1Lw%25253D%25253D; new_uv=15; new_session=0'
+MYCookie = 'aQQ_ajkguid=C371FC41-3EF5-0EA7-A4D7-A99718EE058E; ctid=252; lps="/es/|"; sessid=0C88B148-C4D4-0962-6751-DE2EF25D350D; 58tj_uuid=7e9b6528-bf06-4eb2-84ad-fc5534f5e7d7; new_session=1; init_refer=; new_uv=1; wmda_uuid=7a939d1a7e2bbe439e77a636b0f5731a; wmda_new_uuid=1; wmda_session_id_6145577459763=1540956722957-dc3ae302-9102-acc4; wmda_visited_projects=%3B6145577459763'
 
-city_url = [
+city_url1 = [
     {'city': '广州', 'url': 'https://m.anjuke.com/gz/xiaoqu/'},
     {'city': '成都', 'url': 'https://m.anjuke.com/cd/xiaoqu/'},
     {'city': '重庆', 'url': 'https://m.anjuke.com/cq/xiaoqu/'},
@@ -123,6 +123,7 @@ city_url = [
     {'city': '阿里', 'url': 'https://m.anjuke.com/al/xiaoqu/'},
     {'city': '阿拉尔', 'url': 'https://m.anjuke.com/ale/xiaoqu/'},
     {'city': '阿拉善盟', 'url': 'https://m.anjuke.com/alsm/xiaoqu/'},
+
     {'city': '澳门', 'url': 'https://m.anjuke.com/am/xiaoqu/'},
     {'city': '安达', 'url': 'https://m.anjuke.com/ad/xiaoqu/'},
     {'city': '安丘', 'url': 'https://m.anjuke.com/anq/xiaoqu/'},
@@ -131,7 +132,6 @@ city_url = [
     {'city': '阿尔山', 'url': 'https://m.anjuke.com/aesh/xiaoqu/'},
     {'city': '阿图什', 'url': 'https://m.anjuke.com/atsh/xiaoqu/'},
     {'city': '安陆', 'url': 'https://m.anjuke.com/anl/xiaoqu/'},
-
     {'city': '保定', 'url': 'https://m.anjuke.com/bd/xiaoqu/'},
     {'city': '包头', 'url': 'https://m.anjuke.com/bt/xiaoqu/'},
     {'city': '滨州', 'url': 'https://m.anjuke.com/bz/xiaoqu/'},
@@ -154,10 +154,21 @@ city_url = [
     {'city': '霸州', 'url': 'https://m.anjuke.com/baz/xiaoqu/'},
     {'city': '北安', 'url': 'https://m.anjuke.com/ban/xiaoqu/'},
     {'city': '北票', 'url': 'https://m.anjuke.com/bp/xiaoqu/'},
+    #
+    {'city': '香港', 'url': 'https://m.anjuke.com/hongkong/xiaoqu/'},
+    {'city': '合肥', 'url': 'https://m.anjuke.com/hf/xiaoqu/'},
+    {'city': '哈尔滨', 'url': 'https://m.anjuke.com/heb/xiaoqu/'},
+
+    {'city': '大连', 'url': 'https://m.anjuke.com/dl/xiaoqu/'},
+    {'city': '东莞', 'url': 'https://m.anjuke.com/dg/xiaoqu/'},
+    {'city': '呼和浩特', 'url': 'https://m.anjuke.com/hhht/xiaoqu/'},
+    {'city': '南京', 'url': 'https://m.anjuke.com/nj/xiaoqu/'},
+    {'city': '宁波', 'url': 'https://m.anjuke.com/nb/xiaoqu/'},
+    {'city': '南昌', 'url': 'https://m.anjuke.com/nc/xiaoqu/'},
+
     {'city': '泊头', 'url': 'https://m.anjuke.com/bot/xiaoqu/'},
     {'city': '博乐', 'url': 'https://m.anjuke.com/bl/xiaoqu/'},
     {'city': '北流', 'url': 'https://m.anjuke.com/beil/xiaoqu/'},
-
     {'city': '常州', 'url': 'https://m.anjuke.com/cz/xiaoqu/'},
     {'city': '长春', 'url': 'https://m.anjuke.com/cc/xiaoqu/'},
     {'city': '沧州', 'url': 'https://m.anjuke.com/cang/xiaoqu/'},
@@ -184,8 +195,7 @@ city_url = [
     {'city': '赤水', 'url': 'https://m.anjuke.com/chish/xiaoqu/'},
     {'city': '慈溪', 'url': 'https://m.anjuke.com/cix/xiaoqu/'},
     {'city': '崇州', 'url': 'https://m.anjuke.com/chz/xiaoqu/'},
-    {'city': '大连', 'url': 'https://m.anjuke.com/dl/xiaoqu/'},
-    {'city': '东莞', 'url': 'https://m.anjuke.com/dg/xiaoqu/'},
+
     {'city': '德阳', 'url': 'https://m.anjuke.com/de/xiaoqu/'},
     {'city': '大理', 'url': 'https://m.anjuke.com/da/xiaoqu/'},
     {'city': '德州', 'url': 'https://m.anjuke.com/dz/xiaoqu/'},
@@ -270,13 +280,11 @@ city_url = [
     {'city': '高要', 'url': 'https://m.anjuke.com/gaoyaoshi/xiaoqu/'},
     {'city': '古交', 'url': 'https://m.anjuke.com/guj/xiaoqu/'},
     {'city': '高碑店', 'url': 'https://m.anjuke.com/gbd/xiaoqu/'},
-    {'city': '香港', 'url': 'https://m.anjuke.com/hongkong/xiaoqu/'},
-    {'city': '合肥', 'url': 'https://m.anjuke.com/hf/xiaoqu/'},
-    {'city': '哈尔滨', 'url': 'https://m.anjuke.com/heb/xiaoqu/'},
+
     {'city': '海口', 'url': 'https://m.anjuke.com/hai/xiaoqu/'},
     {'city': '惠州', 'url': 'https://m.anjuke.com/hui/xiaoqu/'},
     {'city': '邯郸', 'url': 'https://m.anjuke.com/hd/xiaoqu/'},
-    {'city': '呼和浩特', 'url': 'https://m.anjuke.com/hhht/xiaoqu/'},
+
     {'city': '黄冈', 'url': 'https://m.anjuke.com/hg/xiaoqu/'},
     {'city': '淮南', 'url': 'https://m.anjuke.com/hn/xiaoqu/'},
     {'city': '黄山', 'url': 'https://m.anjuke.com/hsh/xiaoqu/'},
@@ -460,9 +468,7 @@ city_url = [
     {'city': '绵竹', 'url': 'https://m.anjuke.com/mianzh/xiaoqu/'},
     {'city': '明光', 'url': 'https://m.anjuke.com/mingg/xiaoqu/'},
     {'city': '汨罗', 'url': 'https://m.anjuke.com/mil/xiaoqu/'},
-    {'city': '南京', 'url': 'https://m.anjuke.com/nj/xiaoqu/'},
-    {'city': '宁波', 'url': 'https://m.anjuke.com/nb/xiaoqu/'},
-    {'city': '南昌', 'url': 'https://m.anjuke.com/nc/xiaoqu/'},
+
     {'city': '南宁', 'url': 'https://m.anjuke.com/nn/xiaoqu/'},
     {'city': '南通', 'url': 'https://m.anjuke.com/nt/xiaoqu/'},
     {'city': '南充', 'url': 'https://m.anjuke.com/nan/xiaoqu/'},
@@ -766,3 +772,5 @@ city_url = [
     {'city': '涿州', 'url': 'https://m.anjuke.com/zzs/xiaoqu/'},
     {'city': '枣阳', 'url': 'https://m.anjuke.com/zys/xiaoqu/'},
     {'city': '漳平', 'url': 'https://m.anjuke.com/zhp/xiaoqu/'}]
+
+city_url = city_url1[436:456]

@@ -8,7 +8,7 @@
 import logging
 import pymongo
 import datetime
-from xiaoqu_crawl.settings import MONGO_CONNECTION
+from .settings import MONGO_CONNECTION
 
 logger = logging.getLogger(__name__)
 

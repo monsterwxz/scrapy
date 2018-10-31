@@ -15,7 +15,7 @@ class AuthorSpider(scrapy.Spider):
     headers['User-Agent'] = "Mozilla/5.0 (iPhone; CPU iPhone OS 8_3 like Mac OS X) " \
                             "AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12F70 Safari/600.1.4"
     headers['cookie'] = MYCookie
-    start_urls = [i['url'] for i in city_url[4:5]]
+    start_urls = [i['url'] for i in city_url]
 
     def start_requests(self):
         for url in self.start_urls:
