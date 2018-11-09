@@ -101,3 +101,38 @@ class MaimaiCrawlDownloaderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+import random
+
+
+class RandomUserAgent(object):
+    """Randomly rotate user agents based on a list of predefined ones"""
+
+    def __init__(self, agents):
+        self.agents = agents
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings.getlist('USER_AGENTS'))
+
+    def process_request(self, request, spider):
+        request.headers.setdefault('cookie',
+                                   '_buuid=0a43ac7a-a998-41fb-826a-c7a645c7d3dd; seid=s1541575813347; guid=GxgYBBgYHwQbGBIEGxkbVhgSHR8TEx9WHBkEHRkfBUNYS0xLeQoaGhsEHRMeGQQaBBMcBU9HRVhCaQoDRUFJT20KT0FDRgoGZmd+YmECChwZBB0ZHwVeQ2FIT31PRlpaawoDHhxSChEeHERDfQoRGgQaGwp+ZApZXUVOREN9AgoaBB8FS0ZGQ1BFZw==; token="juffd7CpFo97fItpdvn1FLInJneWPM9S706+Z0WzJMI8WdG+qAgYf10A1UKSIRAt8CKuzcDfAvoCmBm7+jVysA=="; uid="af1ewkBe5bJpU++2bbvlNvAirs3A3wL6ApgZu/o1crA="; session=eyJ1IjoiMjA2Mzg0NDgzIiwic2VjcmV0Ijoidm5jNC01MV9nVHRXaUFJLXZKcjNqZE9sIiwibWlkNDU2ODc2MCI6ZmFsc2UsIl9leHBpcmUiOjE1NDE2NjI2NDA1MjksIl9tYXhBZ2UiOjg2NDAwMDAwfQ==; session.sig=FH3KgmVpMXSoEwU2se5VT_KZcAo; OUTFOX_SEARCH_USER_ID_NCOO=2087174091.4867668; captcha=793fd949-a562-4d57-bbbb-73cdd4891ad7',
+                                   )
+        request.headers.setdefault('User-Agent', random.choice(self.agents))
+
+
+class RandomProxy(object):
+    """随机代理ip"""
+
+    def __init__(self, proxy_ip):
+        self.proxy_ip = proxy_ip
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings.getlist('PROXY_POOLS'))
+
+    def process_request(self, request, spider):
+        request.meta['proxy'] = random.choice(self.proxy_ip)
+

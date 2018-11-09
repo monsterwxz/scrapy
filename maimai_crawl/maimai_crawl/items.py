@@ -11,4 +11,12 @@ import scrapy
 class MaimaiCrawlItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    name = scrapy.Field()
+    avatar = scrapy.Field()
+    company = scrapy.Field()
+    career = scrapy.Field()
+    position = scrapy.Field()
+    encode_mmid = scrapy.Field()
+    province = scrapy.Field()
+    city = scrapy.Field()
+    tag = scrapy.Field()
