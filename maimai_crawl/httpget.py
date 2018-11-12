@@ -26,17 +26,18 @@ PROXY_POOLS = ['https://113.200.56.13:8010', 'https://114.116.10.21:3128', 'http
 class Proxies(object):
     """docstring for Proxies"""
 
-    def __init__(self, page=3):
+    def __init__(self, page=1):
         self.proxies = []
         self.verify_pro = []
         self.page = page
         self.headers = {
             'Accept': '*/*',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36',
+            'User-Agent': random.choice(USER_AGENTS),
             'Accept-Encoding': 'gzip, deflate, sdch',
             'Accept-Language': 'zh-CN,zh;q=0.8'
         }
 
+    def start(self):
         self.get_proxies_wn()
         self.verify_proxies()
 
@@ -48,7 +49,7 @@ class Proxies(object):
         page_stop = page + self.page
         while page < page_stop:
             url = 'http://www.xicidaili.com/wn/%d' % page
-            html = requests.get(url, headers={'User-Agent': random.choice(USER_AGENTS)}).content
+            html = requests.get(url, headers=self.headers).content
             soup = BeautifulSoup(html, 'lxml')
             ip_list = soup.find(id='ip_list')
             for odd in ip_list.find_all(class_='odd'):
@@ -142,16 +143,23 @@ class Spider(object):
         self.proxy_list = []
         # 代理ip出错记录
         self.proxy_err = {}
+        # 初始化获取代理的类
+        self.GET_PROXY = Proxies()
 
     def get_proxy(self):
         if len(self.proxy_list) == 0:
             print('代理ip为空，重新获取代理ip')
             self.proxy_err = {}
-            p = Proxies()
-            self.proxy_list = p.get_proxy_list()
-            print('得到{}个'.format(len(self.proxy_list)))
-            print(self.proxy_list)
-        return random.choice(self.proxy_list)
+            try:
+                self.GET_PROXY.start()  # 采集和验证代理ip
+                self.proxy_list = self.GET_PROXY.get_proxy_list()
+                print('得到{}个'.format(len(self.proxy_list)))
+                print(self.proxy_list)
+
+            except Exception as e:
+                print('重新获取代理失败', e)
+
+        return self.proxy_list
 
     def get_agent(self):
         return random.choice(USER_AGENTS)
@@ -162,8 +170,8 @@ class Spider(object):
             self.proxy_err[proxy] = 0
         self.proxy_err[proxy] += 1
         # 代理ip出错3次，删除
-        if self.proxy_err.get(proxy) >= 3:
-            print('删除代理：', proxy)
+        if self.proxy_err.get(proxy) > 5:
+            print('删除代理:', proxy)
             self.proxy_list.remove(proxy)
         print('当前代理池剩余{}个'.format(len(self.proxy_list)))
 
@@ -176,18 +184,25 @@ class Spider(object):
         item = {}
         while True:
             # time.sleep(0.2)
+
             print(datetime.datetime.now(), '当前队列长度', self.redis_db.llen(self.redis_url_list_name))
             if self.redis_db.llen(self.redis_url_list_name) == 0:
                 break
             url = self.redis_db.rpop(self.redis_url_list_name)
-            proxy = self.get_proxy()
+            proxylist = self.get_proxy()
+            if len(proxylist) == 0:
+                continue
+            proxy = random.choice(proxylist)
+
             # 判断是否已经访问
             if self.redis_db.get(url) is None:
                 try:
-                    response = requests.get(url,
-                                            proxies={'https': proxy},
-                                            # proxies={'https': PROXY_POOLS[1]},
-                                            headers={'User-Agent': self.get_agent()}, timeout=5)
+                    s = requests.session()
+                    s.keep_alive = False  # 关闭多余连接
+                    response = s.get(url,
+                                     proxies={'https': proxy},
+                                     # proxies={'https': PROXY_POOLS[1]},
+                                     headers={'User-Agent': self.get_agent()}, timeout=5)
                     datalist = json.loads(response.text)
                     print('分析数组内数据')
                     for i in datalist:
