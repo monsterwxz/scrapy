@@ -49,7 +49,9 @@ class Proxies(object):
         page_stop = page + self.page
         while page < page_stop:
             url = 'http://www.xicidaili.com/wn/%d' % page
-            html = requests.get(url, headers=self.headers).content
+            s = requests.session()
+            s.keep_alive = False  # 关闭多余连接
+            html = s.get(url, headers=self.headers).content
             soup = BeautifulSoup(html, 'lxml')
             ip_list = soup.find(id='ip_list')
             for odd in ip_list.find_all(class_='odd'):
@@ -188,12 +190,11 @@ class Spider(object):
             print(datetime.datetime.now(), '当前队列长度', self.redis_db.llen(self.redis_url_list_name))
             if self.redis_db.llen(self.redis_url_list_name) == 0:
                 break
-            url = self.redis_db.rpop(self.redis_url_list_name)
             proxylist = self.get_proxy()
             if len(proxylist) == 0:
                 continue
             proxy = random.choice(proxylist)
-
+            url = self.redis_db.rpop(self.redis_url_list_name)
             # 判断是否已经访问
             if self.redis_db.get(url) is None:
                 try:
