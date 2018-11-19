@@ -142,6 +142,9 @@ class Spider(object):
         self.redis_db = StrictRedisCluster(startup_nodes=[{"host": "192.168.108.181", "port": "6379"}],
                                            decode_responses=True)
         self.redis_url_list_name = 'maimai_list'
+        self.redis_url_set = 'maimai_set'
+        self.redis_stored_hash = 'stored_mm_hash'
+        self.redis_visited_hash = 'visited_mm_hash'
         self.proxy_list = []
         # 代理ip出错记录
         self.proxy_err = {}
@@ -172,7 +175,7 @@ class Spider(object):
             self.proxy_err[proxy] = 0
         self.proxy_err[proxy] += 1
         # 代理ip出错3次，删除
-        if self.proxy_err.get(proxy) > 5:
+        if self.proxy_err.get(proxy) > 10:
             print('删除代理:', proxy)
             self.proxy_list.remove(proxy)
         print('当前代理池剩余{}个'.format(len(self.proxy_list)))
@@ -182,21 +185,21 @@ class Spider(object):
         :param url:
         :return:
         """
-        self.redis_db.lpush(self.redis_url_list_name, self.start_url)
+        self.redis_db.sadd(self.redis_url_set, self.start_url)
         item = {}
         while True:
             # time.sleep(0.2)
 
-            print(datetime.datetime.now(), '当前队列长度', self.redis_db.llen(self.redis_url_list_name))
-            if self.redis_db.llen(self.redis_url_list_name) == 0:
+            print(datetime.datetime.now(), '当前url队列长度', self.redis_db.scard(self.redis_url_set))
+            if self.redis_db.scard(self.redis_url_set) == 0:
                 break
             proxylist = self.get_proxy()
             if len(proxylist) == 0:
                 continue
             proxy = random.choice(proxylist)
-            url = self.redis_db.rpop(self.redis_url_list_name)
+            url = self.redis_db.spop(self.redis_url_set)
             # 判断是否已经访问
-            if self.redis_db.get(url) is None:
+            if self.redis_db.hexists(self.redis_visited_hash, url) is False:
                 try:
                     s = requests.session()
                     s.keep_alive = False  # 关闭多余连接
@@ -205,7 +208,7 @@ class Spider(object):
                                      # proxies={'https': PROXY_POOLS[1]},
                                      headers={'User-Agent': self.get_agent()}, timeout=5)
                     datalist = json.loads(response.text)
-                    print('分析数组内数据')
+                    print('分析存储数据')
                     for i in datalist:
                         info = i.get("card")
                         item["name"] = info.get("name")
@@ -219,21 +222,21 @@ class Spider(object):
                         item["tag"] = info.get("line4")
                         _url = "https://maimai.cn/contact/interest_contact/" + item["encode_mmid"]
                         # 判断是否已经访问
-                        if self.redis_db.get(_url) is None:
+                        if self.redis_db.hexists(self.redis_visited_hash, url) is False:
                             # 存放获取到的新的url
-                            self.redis_db.lpush(self.redis_url_list_name, _url)
+                            self.redis_db.sadd(self.redis_url_set, _url)
                         # 判断该条数据是否存入数据库
-                        if self.redis_db.get(item["encode_mmid"]) is None:
+                        if self.redis_db.hexists(self.redis_stored_hash, item["encode_mmid"]) is False:
                             self.mongo_db.insert_item(item)
                             # 标记该条数据已经存入数据库
-                            self.redis_db.set(item["encode_mmid"], 1)
+                            self.redis_db.hmset(self.redis_stored_hash, {item["encode_mmid"]: 1})
                     # 标记当前url已经访问
-                    self.redis_db.set(url, 1)
+                    self.redis_db.hmset(self.redis_visited_hash, {url: 1})
                 except Exception as e:
                     self.judge_proxy(proxy)
                     print(e, url)
                     print('重新加入队列')
-                    self.redis_db.lpush(self.redis_url_list_name, url)
+                    self.redis_db.sadd(self.redis_url_set, url)
 
         self.mongo_db.close()
 
