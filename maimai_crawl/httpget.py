@@ -11,6 +11,7 @@ import time
 from rediscluster import StrictRedisCluster
 from bs4 import BeautifulSoup
 from multiprocessing import Process, Queue
+import aiohttp, asyncio
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36",
@@ -19,8 +20,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
     "Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1"
 ]
-PROXY_POOLS = ['https://113.200.56.13:8010', 'https://114.116.10.21:3128', 'https://119.27.177.169:80',
-               'https://140.143.96.216:80']
 
 
 class Proxies(object):
@@ -164,13 +163,13 @@ class Spider(object):
                     print('远端请求获取代理')
                     s = requests.session()
                     s.keep_alive = False  # 关闭多余连接
-                    response = s.get('http://45.40.243.235:8089/get_proxy',
+                    response = s.get('http://119.27.161.145:8089/get_proxy',
                                      headers={'User-Agent': self.get_agent()}, timeout=40)
                     self.proxy_list = json.loads(response.text)
                 except Exception as e:
                     print('远端代理获取失败')
                     print(e)
-                    self.proxy_list=[]
+                    self.proxy_list = []
 
                 print('得到{}个'.format(len(self.proxy_list)))
                 print(self.proxy_list)
@@ -188,11 +187,43 @@ class Spider(object):
         if self.proxy_err.get(proxy) is None:
             self.proxy_err[proxy] = 0
         self.proxy_err[proxy] += 1
-        # 代理ip出错3次，删除
+        # 代理ip出错10次，删除
         if self.proxy_err.get(proxy) > 10:
-            print('删除代理:', proxy)
-            self.proxy_list.remove(proxy)
-        print('当前代理池剩余{}个'.format(len(self.proxy_list)))
+            if proxy in self.proxy_list:
+                print('删除代理:', proxy)
+                self.proxy_list.remove(proxy)
+            else:
+                print('代理池中已经删除:', proxy)
+
+        print('当前代理池剩余{}个'.format(len(self.proxy_list)), self.proxy_list)
+
+    def async_http(self, url_list, proxylist):
+        agent = self.get_agent()
+
+        async def run(url):
+            async with aiohttp.ClientSession() as session:
+                proxy = random.choice(proxylist)
+                try:
+                    async with session.get(url,
+                                           proxy=proxy.replace('https', 'http'),
+                                           headers={'User-Agent': agent},
+                                           timeout=10) as response:
+                        text = await response.json()
+                        result.append((url, text))
+                except Exception as e:
+                    if err_result.get(proxy) is None:
+                        err_result[proxy] = []
+                    err_result[proxy].append(url)
+
+        t1 = time.time()
+        result = []
+        err_result = {}
+        loop = asyncio.get_event_loop()
+        tasks = [asyncio.ensure_future(run(u)) for u in url_list]
+        loop.run_until_complete(asyncio.wait(tasks))
+        t2 = time.time()
+        print('async_http', t2 - t1)
+        return result, err_result
 
     def start(self):
         """
@@ -210,19 +241,15 @@ class Spider(object):
             proxylist = self.get_proxy()
             if len(proxylist) == 0:
                 continue
-            proxy = random.choice(proxylist)
-            url = self.redis_db.spop(self.redis_url_set)
+            # proxy = random.choice(proxylist)
+            # url = self.redis_db.spop(self.redis_url_set)
+            urls = [self.redis_db.spop(self.redis_url_set) for i in range(20)]
             # 判断是否已经访问
-            if self.redis_db.hexists(self.redis_visited_hash, url) is False:
-                try:
-                    s = requests.session()
-                    s.keep_alive = False  # 关闭多余连接
-                    response = s.get(url,
-                                     proxies={'https': proxy},
-                                     # proxies={'https': PROXY_POOLS[1]},
-                                     headers={'User-Agent': self.get_agent()}, timeout=5)
-                    datalist = json.loads(response.text)
-                    print('分析存储数据')
+            urls = list(filter(lambda url: self.redis_db.hexists(self.redis_visited_hash, url) is False, urls))
+            if len(urls) > 0:
+                all_data, err_data = self.async_http(urls, proxylist)
+                print('分析存储数据个数:', len(all_data))
+                for url, datalist in all_data:
                     for i in datalist:
                         info = i.get("card")
                         item["name"] = info.get("name")
@@ -236,7 +263,7 @@ class Spider(object):
                         item["tag"] = info.get("line4")
                         _url = "https://maimai.cn/contact/interest_contact/" + item["encode_mmid"]
                         # 判断是否已经访问
-                        if self.redis_db.hexists(self.redis_visited_hash, url) is False:
+                        if self.redis_db.hexists(self.redis_visited_hash, _url) is False:
                             # 存放获取到的新的url
                             self.redis_db.sadd(self.redis_url_set, _url)
                         # 判断该条数据是否存入数据库
@@ -246,11 +273,51 @@ class Spider(object):
                             self.redis_db.hmset(self.redis_stored_hash, {item["encode_mmid"]: 1})
                     # 标记当前url已经访问
                     self.redis_db.hmset(self.redis_visited_hash, {url: 1})
-                except Exception as e:
-                    self.judge_proxy(proxy)
-                    print(e, url)
-                    print('重新加入队列')
-                    self.redis_db.sadd(self.redis_url_set, url)
+                print('失败url',err_data)
+                for proxyurl, url_list in err_data.items():
+                    self.judge_proxy(proxyurl)
+                    for url in url_list:
+                        self.redis_db.sadd(self.redis_url_set, url)
+
+            # # 判断是否已经访问
+            # if self.redis_db.hexists(self.redis_visited_hash, url) is False:
+            #     try:
+            #         s = requests.session()
+            #         s.keep_alive = False  # 关闭多余连接
+            #         response = s.get(url,
+            #                          proxies={'https': proxy},
+            #                          # proxies={'https': PROXY_POOLS[1]},
+            #                          headers={'User-Agent': self.get_agent()}, timeout=5)
+            #         datalist = json.loads(response.text)
+            #         print('分析存储数据')
+            #         for i in datalist:
+            #             info = i.get("card")
+            #             item["name"] = info.get("name")
+            #             item["avatar"] = info.get("avatar")
+            #             item["company"] = info.get("company")
+            #             item["career"] = info.get("career")
+            #             item["position"] = info.get("position")
+            #             item["encode_mmid"] = info.get("encode_mmid")
+            #             item["province"] = info.get("province")
+            #             item["city"] = info.get("city")
+            #             item["tag"] = info.get("line4")
+            #             _url = "https://maimai.cn/contact/interest_contact/" + item["encode_mmid"]
+            #             # 判断是否已经访问
+            #             if self.redis_db.hexists(self.redis_visited_hash, url) is False:
+            #                 # 存放获取到的新的url
+            #                 self.redis_db.sadd(self.redis_url_set, _url)
+            #             # 判断该条数据是否存入数据库
+            #             if self.redis_db.hexists(self.redis_stored_hash, item["encode_mmid"]) is False:
+            #                 self.mongo_db.insert_item(item)
+            #                 # 标记该条数据已经存入数据库
+            #                 self.redis_db.hmset(self.redis_stored_hash, {item["encode_mmid"]: 1})
+            #         # 标记当前url已经访问
+            #         self.redis_db.hmset(self.redis_visited_hash, {url: 1})
+            #     except Exception as e:
+            #         self.judge_proxy(proxy)
+            #         print(e, url)
+            #         print('重新加入队列')
+            #         self.redis_db.sadd(self.redis_url_set, url)
 
         self.mongo_db.close()
 
