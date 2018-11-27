@@ -163,9 +163,9 @@ class Spider(object):
                     print('远端请求获取代理')
                     s = requests.session()
                     s.keep_alive = False  # 关闭多余连接
-                    response = s.get('http://119.27.161.145:8089/get_proxy',
+                    response = s.get(REMOTE_URL,
                                      headers={'User-Agent': self.get_agent()}, timeout=40)
-                    self.proxy_list = json.loads(response.text)
+                    self.proxy_list = json.loads(response.text)["ip_list"]
                 except Exception as e:
                     print('远端代理获取失败')
                     print(e)
@@ -243,7 +243,7 @@ class Spider(object):
                 continue
             # proxy = random.choice(proxylist)
             # url = self.redis_db.spop(self.redis_url_set)
-            urls = [self.redis_db.spop(self.redis_url_set) for i in range(20)]
+            urls = [self.redis_db.spop(self.redis_url_set) for i in range(10)]
             # 判断是否已经访问
             urls = list(filter(lambda url: self.redis_db.hexists(self.redis_visited_hash, url) is False, urls))
             if len(urls) > 0:
@@ -273,7 +273,7 @@ class Spider(object):
                             self.redis_db.hmset(self.redis_stored_hash, {item["encode_mmid"]: 1})
                     # 标记当前url已经访问
                     self.redis_db.hmset(self.redis_visited_hash, {url: 1})
-                print('失败url',err_data)
+                print('失败url:', err_data)
                 for proxyurl, url_list in err_data.items():
                     self.judge_proxy(proxyurl)
                     for url in url_list:
@@ -322,6 +322,8 @@ class Spider(object):
         self.mongo_db.close()
 
 
+# 获取代理的ip
+REMOTE_URL = 'http://118.25.225.92:8089/get_proxy'
 if __name__ == "__main__":
     s = Spider(
         'https://maimai.cn/contact/interest_contact/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoxMTk4MjA4NDAsImxldmVsIjoyLCJ0IjoiY3R0In0.fnz6vNCb63n2j-Frr6H_vu1LuG1jgfoq2oPOITSAJdA')
