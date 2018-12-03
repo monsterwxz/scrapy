@@ -159,22 +159,18 @@ class Spider(object):
                 # self.GET_PROXY.start()  # 采集和验证代理ip
                 # self.proxy_list = self.GET_PROXY.get_proxy_list()
                 # 远端获取代理ip
-                try:
-                    print('远端请求获取代理')
-                    s = requests.session()
-                    s.keep_alive = False  # 关闭多余连接
-                    response = s.get(REMOTE_URL,
-                                     headers={'User-Agent': self.get_agent()}, timeout=40)
-                    self.proxy_list = json.loads(response.text)["ip_list"]
-                except Exception as e:
-                    print('远端代理获取失败')
-                    print(e)
-                    self.proxy_list = []
 
+                print('远端请求获取代理')
+                s = requests.session()
+                s.keep_alive = False  # 关闭多余连接
+                response = s.get(REMOTE_URL,
+                                 headers={'User-Agent': self.get_agent()}, timeout=40)
+                self.proxy_list = json.loads(response.text)["ip_list"]
                 print('得到{}个'.format(len(self.proxy_list)))
                 print(self.proxy_list)
 
             except Exception as e:
+                self.proxy_list = []
                 print('重新获取代理失败', e)
 
         return self.proxy_list
